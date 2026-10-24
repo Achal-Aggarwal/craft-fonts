@@ -162,7 +162,8 @@ one static weight-400 face without `fvar`/`avar`/`STAT`, outlines for `简体中
 
 - **UI (egui):** append permitted craft faces at the end of each interface font family, after
   bundled fonts, system fonts and existing script fallbacks. Register Japanese (`Jpan`) faces,
-  `NanumGothic` / `Regular` for `Hang,Kore`, `Noto Sans Hebrew` / `Regular` for `Hebr`, and both
+  `NanumGothic` / `Regular` for `Hang,Kore`, `Noto Sans Hebrew` / `Regular` for `Hebr`,
+  `Noto Sans Devanagari` / `Regular` for `Deva`, and both
   `Noto Sans Symbols` / `Regular` and `Noto Sans Symbols 2` / `Regular` for `Zsym`. The Hebrew
   file is one static face: add it once per family set that includes it (for example the
   proportional family and, where the consumer has one, the `CELL`/monospace family). Do not
@@ -175,20 +176,24 @@ one static weight-400 face without `fvar`/`avar`/`STAT`, outlines for `简体中
   storytold egui fork uses HarfRust shaping and bidi layout, but font-only tests do not
   qualify correctly positioned vocalized (pointed) Hebrew in an app. The initial glyph
   acceptance text is unpointed, e.g. `שלום deck 42`; shaping needs separate app-level checks.
+  Devanagari coverage likewise means each codepoint has a drawn outline: the font-only tests
+  do not qualify conjunct formation or mark positioning, which need app-level shaping checks
+  such as PhotoCraft's Camera Raw language-switch test with `फ़ा` (U+092B U+093C U+093E).
 - **Document text engines:** register the same permitted script and symbol faces after the
   document's requested font and the app's existing fallback faces. Preserve the app's asset
   exclusions, and do not treat a script tag as proof that every character in that script exists.
 - **Web (wasm32):** the recipe uses a fixed allowlist. Never embed the whole manifest: the
-  current faces together are roughly 43 MiB (45.5 MB), over typical per-file hosting limits. Measure the
-  raw bytes of each allowlisted font, plus raw and compressed wasm before and after, against the
-  consumer's actual web gate. Do not call the result "within budget" without a named number and
-  a real check. GridCraft's decision is documented in
+  current faces together are roughly 43.8 MiB (45.9 MB), over typical per-file hosting limits.
+  Measure the raw bytes of each allowlisted font, plus raw and compressed wasm before and after,
+  against the consumer's actual web gate. Do not call the result "within budget" without a named
+  number and a real check. GridCraft's decision is documented in
   [`egui-037-font-coverage-plan.md`](egui-037-font-coverage-plan.md): BIZ UDPGothic Regular/Bold,
   NanumGothic Regular, Noto Sans Symbols Regular and Noto Sans Symbols 2 Regular (the verified
   cmap shows Symbols 1 lacks `✕`/`◀` and Symbols 2 supplies them), and no Noto CJK. Hebrew is
   deliberately **not** in that web allowlist: `Noto Sans Hebrew` is a native-only addition in
   this round, and web Hebrew remains an unqualified gap. `LXGW WenKai Lite` is likewise
-  native-only and must stay out of every wasm allowlist.
+  native-only and must stay out of every wasm allowlist. No existing web allowlist adds
+  `Noto Sans Devanagari`; keep every wasm allowlist explicit.
 - Prefer `BIZ UDPGothic` for UI text and `Shippori Mincho` / `BIZ UDMincho` for serif document
   text.
 - Optional-input diagnostics may skip when `CRAFT_FONTS` is empty. Acceptance tests that

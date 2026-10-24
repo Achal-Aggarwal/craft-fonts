@@ -175,9 +175,10 @@ lookup.
 
 ### Current bytes
 
-The central `fonts/manifest.txt` currently names 45,600,892 font bytes (43.49 MiB). The
-16,437,364-byte `Noto Sans CJK SC` file is still in the repository for other consumers but is
-excluded from DeckCraft native builds by `crates/fonts/build.rs`.
+The central `fonts/manifest.txt` currently names 45,878,572 font bytes (43.75 MiB; 13 rows,
+after the Devanagari follow-up added 277,680 bytes). The 16,437,364-byte `Noto Sans CJK SC`
+file is still in the repository for other consumers but is excluded from DeckCraft native
+builds by `crates/fonts/build.rs`.
 
 DeckCraft's web branch embeds only:
 

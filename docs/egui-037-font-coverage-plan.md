@@ -68,9 +68,11 @@ per-app variation-coordinate exception and registers one face.
   `fonts/noto-sans-hebrew/OFL.txt`.
 - `docs/integration.md` lists the `Hebr` face in the central fallback set and states that it is
   native-only for this round.
-- The `crates/craft-fonts/Cargo.toml` "about 43 MiB" embedded-size comment remains accurate:
-  the manifest's font bytes become 45,600,892 (43.49 MiB) after +66,156, so no comment edit is
-  needed. This is the documented "embedded-size comment" result, not a silent omission.
+- At the time of this Hebrew follow-up the `crates/craft-fonts/Cargo.toml` "about 43 MiB"
+  embedded-size comment covered a manifest of 45,600,892 bytes (43.49 MiB) after +66,156.
+  The later Devanagari follow-up raises the total to 45,878,572 bytes (43.75 MiB) and changes
+  that comment to "about 43.8 MiB". This is the documented "embedded-size comment" result,
+  not a silent omission.
 - Every existing font, manifest line, attribution row, README row and the original baseline
   fixture stay byte-identical.
 

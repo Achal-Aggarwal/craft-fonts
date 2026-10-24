@@ -25,7 +25,7 @@ This library is meant to have the following:
 | `fonts/simplified-chinese-manifest.txt` | Opt-in native-only Simplified Chinese row, same eight-field format. Not in `FONTS` or the embed payload. |
 | `ATTRIBUTION.md` | Authors, pinned sources and licences. |
 | `crates/craft-fonts` | Rust: the manifest as a static table, finding a checkout (`CRAFT_FONTS_DIR`), loading it, and an `embed` feature that compiles the fonts in. |
-| `crates/craft-fonts-tests` | Tests asserted on these fonts: checksums, licences, family/style names, Japanese/Korean/Hebrew/symbol coverage and outlines, static-face metadata and vertical-text (`vert`/`vrt2`) support. |
+| `crates/craft-fonts-tests` | Tests asserted on these fonts: checksums, licences, family/style names, Japanese/Korean/Hebrew/Devanagari/symbol coverage and outlines, static-face metadata and vertical-text (`vert`/`vrt2`) support. |
 | `docs/integration.md` | How an app uses craft-fonts as a fully optional build input. |
 
 ### Fonts
@@ -43,6 +43,7 @@ This library is meant to have the following:
 | Noto Sans Symbols | Regular (variable: wght) | UI key/modifier symbols (`⌃`, arrows) | OFL-1.1 |
 | Noto Sans Symbols 2 | Regular | UI symbols (`✕`, `◀`, `✓`) | OFL-1.1 |
 | Noto Sans Hebrew | Regular (static) | Hebrew UI and document text | OFL-1.1 |
+| Noto Sans Devanagari | Regular (static) | Devanagari UI and document text | OFL-1.1 |
 | LXGW WenKai Lite | Regular (static) | Native-only opt-in Simplified Chinese fallback (Kai) | OFL-1.1 |
 
 ## How the apps use it

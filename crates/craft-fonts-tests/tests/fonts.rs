@@ -519,6 +519,186 @@ fn hebrew_fonts_cover_unpointed_hebrew_text() {
     }
 }
 
+/// The Devanagari face is the verified upstream static Regular release, added after Hebrew so
+/// existing manifest rows and consumer `craft-font-N` indices do not move. It is the single
+/// `Deva` face in the default manifest; the optional Chinese manifest stays independent.
+const DEVANAGARI_FILE: &str = "fonts/noto-sans-devanagari/NotoSansDevanagari-Regular.ttf";
+const DEVANAGARI_LICENCE_FILE: &str = "fonts/noto-sans-devanagari/OFL.txt";
+const DEVANAGARI_SOURCE: &str =
+    "https://github.com/notofonts/devanagari/releases/tag/NotoSansDevanagari-v2.007";
+const DEVANAGARI_SHA256: &str = "573e525d9f4923d34645fe752475419f45f8dec5a8e43f3e83c5c5f43d1f2ff9";
+const DEVANAGARI_LICENCE_SHA256: &str =
+    "a216f6f8d85c7228093e0ee5e258d9d377e6671f68acb4db1930b29583d0f331";
+
+#[test]
+fn devanagari_row_is_exact_and_independent_of_the_optional_chinese_manifest() {
+    let f = face("Noto Sans Devanagari");
+    assert_eq!(
+        for_script("Deva").count(),
+        1,
+        "the default manifest must list exactly one Deva face"
+    );
+    assert_eq!(f.style, "Regular");
+    assert_eq!(f.file, DEVANAGARI_FILE);
+    assert_eq!(f.scripts, ["Deva"].as_slice());
+    assert_eq!(f.licence, "OFL-1.1");
+    assert_eq!(f.licence_file, DEVANAGARI_LICENCE_FILE);
+    assert_eq!(f.sha256, DEVANAGARI_SHA256);
+    assert_eq!(f.source, DEVANAGARI_SOURCE);
+
+    let optional = optional_entries(SIMPLIFIED_CHINESE_MANIFEST);
+    assert!(
+        !optional
+            .iter()
+            .any(|e| e.family == "Noto Sans Devanagari" || e.file == DEVANAGARI_FILE),
+        "the opt-in Chinese manifest must not gain the default Devanagari face"
+    );
+}
+
+#[test]
+fn devanagari_file_and_licence_match_hashes_and_sizes() {
+    let f = face("Noto Sans Devanagari");
+    let data = bytes(f);
+    assert_eq!(
+        data.len(),
+        277_680,
+        "{}: the pinned Devanagari font is 277,680 bytes",
+        f.file
+    );
+    let digest = Sha256::digest(&data);
+    let hex: String = digest.iter().map(|b| format!("{b:02x}")).collect();
+    assert_eq!(hex, DEVANAGARI_SHA256, "{}: font SHA-256", f.file);
+
+    let licence = std::fs::read(craft_fonts_tests::repo_root().join(f.licence_file))
+        .unwrap_or_else(|e| panic!("{}: {e}", f.licence_file));
+    assert_eq!(
+        licence.len(),
+        4_386,
+        "{}: the archive-root OFL text is 4,386 bytes",
+        f.licence_file
+    );
+    let digest = Sha256::digest(&licence);
+    let hex: String = digest.iter().map(|b| format!("{b:02x}")).collect();
+    assert_eq!(
+        hex, DEVANAGARI_LICENCE_SHA256,
+        "{}: licence SHA-256",
+        f.licence_file
+    );
+    let text = String::from_utf8_lossy(&licence);
+    assert!(
+        text.contains("SIL OPEN FONT LICENSE Version 1.1"),
+        "{} is not the OFL 1.1 text",
+        f.licence_file
+    );
+}
+
+#[test]
+fn devanagari_face_is_a_single_static_regular_face() {
+    let f = face("Noto Sans Devanagari");
+    let data = bytes(f);
+    // A TrueType sfnt, not a TrueType Collection: one face in the file.
+    assert_eq!(&data[..4], &[0x00, 0x01, 0x00, 0x00]);
+    let font = FontRef::new(&data).unwrap_or_else(|e| panic!("{}: {e}", f.file));
+    for (name, table) in [
+        ("fvar", font.fvar().map(|_| ())),
+        ("avar", font.avar().map(|_| ())),
+        ("STAT", font.stat().map(|_| ())),
+    ] {
+        assert!(
+            matches!(table, Err(ReadError::TableIsMissing(_))),
+            "{}: expected no {name} table; the Devanagari file must stay a single static face",
+            f.file
+        );
+    }
+
+    let versions: Vec<String> = font
+        .localized_strings(StringId::VERSION_STRING)
+        .map(|s| s.to_string())
+        .collect();
+    assert!(
+        versions.iter().any(|v| v.contains("Version 2.007")),
+        "{}: expected Version 2.007, found {versions:?}",
+        f.file
+    );
+
+    let os2 = font
+        .os2()
+        .unwrap_or_else(|e| panic!("{}: OS/2: {e}", f.file));
+    assert_eq!(os2.us_weight_class(), 400, "{}: OS/2 weight", f.file);
+    assert_eq!(os2.us_width_class(), 5, "{}: OS/2 width", f.file);
+    let selection = os2.fs_selection();
+    assert!(
+        selection.contains(SelectionFlags::REGULAR),
+        "{}: fsSelection lacks REGULAR",
+        f.file
+    );
+    for flag in [
+        SelectionFlags::ITALIC,
+        SelectionFlags::BOLD,
+        SelectionFlags::OBLIQUE,
+    ] {
+        assert!(
+            !selection.contains(flag),
+            "{}: fsSelection unexpectedly contains {flag:?}",
+            f.file
+        );
+    }
+
+    let attributes = font.attributes();
+    assert_eq!(attributes.weight, Weight::NORMAL, "{}: weight", f.file);
+    assert_eq!(attributes.style, Style::Normal, "{}: style", f.file);
+}
+
+/// The observed failing sequence `फ़ा` (U+092B U+093C U+093E), the Hindi Camera Raw sample
+/// and the individual letter/mark pieces must all map to drawn outlines. This is glyph
+/// coverage, not proof of Devanagari shaping, conjunct formation or mark positioning; the
+/// PhotoCraft Camera Raw test exercises the real shaping path.
+#[test]
+fn devanagari_glyphs_and_hindi_sample_have_drawn_outlines() {
+    let f = face("Noto Sans Devanagari");
+    let failing_sequence = "फ़ा";
+    assert_eq!(
+        failing_sequence.chars().map(u32::from).collect::<Vec<_>>(),
+        [0x092b, 0x093c, 0x093e],
+        "the regression sequence is U+092B U+093C U+093E"
+    );
+    for c in ['फ', '़', 'ा'] {
+        assert_face_glyph_outline(f, c);
+    }
+    for c in failing_sequence.chars() {
+        assert_face_glyph_outline(f, c);
+    }
+
+    const HINDI_SAMPLE: &str = "हिन्दी भाषा क्षत्रिय श्री फ़ाइल फ़िल्टर";
+    let data = bytes(f);
+    let font = FontRef::new(&data).unwrap_or_else(|e| panic!("{}: {e}", f.file));
+    assert!(
+        font.charmap().map(' ').is_some(),
+        "{}: no space glyph in the Hindi sample",
+        f.file
+    );
+    for c in HINDI_SAMPLE.chars() {
+        if c.is_whitespace() {
+            continue;
+        }
+        assert_face_glyph_outline(f, c);
+    }
+}
+
+/// Every code point in the Devanagari block `U+0900..=U+097F` maps to a glyph that draws
+/// something in the pinned file. Again this is coverage, not shaping/positioning.
+#[test]
+fn devanagari_full_block_maps_to_drawn_outlines() {
+    let f = face("Noto Sans Devanagari");
+    let block = '\u{0900}'..='\u{097f}';
+    assert_eq!(block.clone().count(), 128);
+    let data = bytes(f);
+    let font = FontRef::new(&data).unwrap_or_else(|e| panic!("{}: {e}", f.file));
+    for c in block {
+        assert_glyph_outline(&font, f.file, c);
+    }
+}
+
 /// The opt-in Simplified Chinese manifest. It is deliberately separate from
 /// `fonts/manifest.txt`: consumers that do not opt in (including every wasm build) must not
 /// embed this face, and it is not part of craft-fonts' `FONTS`/embed payload.
